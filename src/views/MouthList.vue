@@ -9,7 +9,7 @@
       <div class="search">
         <span class="search-label">终端名称</span>
         <el-select
-          v-model="searchValue"
+          v-model="terminalGrid"
           placeholder="请选择终端名称"
           size="small"
         >
@@ -26,9 +26,7 @@
       <!-- status -->
       <div class="status">
         <div class="columns-check">
-          <div class="check-button" @click="checkAllDialogShow = true">
-            一键盘点
-          </div>
+          <div class="check-button" @click="checkAll">一键盘点</div>
           <u class="check-flex">
             <div class="check-last">
               查看最近一次盘点结果(<span>{{ recentlyResult }}</span
@@ -94,6 +92,7 @@ import MouthStatus from "../components/mouthStatus";
 import MouthCard from "../components/mouthCard";
 import MouthDetail from "./modules/mouthDetail";
 import CheckAll from "./modules/checkAll";
+import { boxGetCheckAll, selectExceptionBoxList } from "../common/js/api";
 export default {
   name: "MouthList",
   components: { MouthStatus, MouthCard, MouthDetail, CheckAll },
@@ -104,7 +103,7 @@ export default {
         padding: "0 20px 20px 25px",
       },
       termialOptions: [],
-      searchValue: "",
+      terminalGrid: "",
       recentlyResult: "2022-02-02",
       mouthLists: [],
       platform: "pc", // 平台
@@ -201,8 +200,25 @@ export default {
       this.detailDialogShow = true;
     },
 
-    goCheckAll() {
+    checkAll() {
       this.checkAllDialogShow = true;
+      boxGetCheckAll({ macAddress: this.terminalGrid }).then((res) => {
+        console.log(res);
+        // let { code, data } = res;
+        // if (code == 200) {
+        //   this.checkView = true;
+        //   this.checkBoxInfo = data;
+        // }
+      });
+      selectExceptionBoxList({ macAddress: this.terminalGrid }).then((res) => {
+        console.log(res);
+        // let { code, data } = res;
+        // if (code == 200) {
+        //   this.ExceptionBoxList = data;
+        //   console.log(this.ExceptionBoxList);
+        // }
+      });
+      return false;
     },
   },
 };

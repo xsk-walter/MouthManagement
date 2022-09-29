@@ -69,7 +69,10 @@
                   <div class="box-time">
                     |&nbsp;{{ boundSealInfo && boundSealInfo.operationTime }}
                   </div>
-                  <div class="box-log" v-show="boundSealInfo.operationLog">
+                  <div
+                    class="box-log"
+                    v-show="boundSealInfo && boundSealInfo.operationLog"
+                  >
                     |&nbsp;{{ boundSealInfo && boundSealInfo.operationLog }}
                   </div>
                 </div>

@@ -7,17 +7,17 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    redirect: "/box/mouthlist",
+    redirect: "/mouthlist",
   },
   {
-    path: "/box/mouthlist",
+    path: "/mouthlist",
     name: "MouthList",
-    component: MouthList
-  }
-]
+    component: MouthList,
+  },
+];
 const router = new VueRouter({
   mode: "history",
-  base: process.env.BASE_URL,
+  base: process.env.BASE_URL + "/box/",
   routes,
 });
 

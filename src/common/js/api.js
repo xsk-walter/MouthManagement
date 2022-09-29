@@ -18,3 +18,46 @@ export function mouthSelect(obj) {
     params: obj,
   });
 }
+// 查询是否可开锁
+export function ischeckAll(params) {
+  return request({
+    url: "/boxLock/isRemoteOperateAllowed",
+    method: "GET",
+    params,
+  });
+}
+// 开锁接口
+export function unLock(query) {
+  return request({
+    url: "/boxLock/RemoteUnLock",
+    method: "POST",
+    data: query,
+  });
+}
+
+// 盘点物品
+export function check_goods(query) {
+  return request({
+    url: "/boxCheck/RemoteCheck",
+    method: "POST",
+    data: query,
+  });
+}
+
+//查看盘点汇总
+export function boxGetCheckAll(obj) {
+  return request({
+    url: "/boxCheck/getCheckAll",
+    method: "get",
+    params: obj,
+  });
+}
+
+//异常格口列表
+export function selectExceptionBoxList(obj) {
+  return request({
+    url: "/cabinetTerminal/selectExceptionBoxList",
+    method: "get",
+    params: obj,
+  });
+}
