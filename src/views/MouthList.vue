@@ -122,6 +122,7 @@ export default {
 
   methods: {
     getList() {
+      console.log(1231231);
       // mouthSelect().then((res) => {
       //   if (res.success) {
       //     this.termialOptions = res.data;

@@ -1,45 +1,8 @@
 <script>
-import {
-  ischeckAll,
-  unLock,
-  check_goods,
-  updateIgnoreException,
-} from "../common/js/api";
+import { ischeckAll, unLock, check_goods } from "../common/js/api";
 
 export default {
   methods: {
-    // 忽略异常 - 单独组建
-    errorIgnore() {
-      let query = {
-        boxId: this.id,
-        ignore: !this.boxErrorIgnore,
-      };
-      if (!this.boxErrorIgnore) {
-        this.$confirm(
-          "确认忽略异常后，当前格口将允许员工正常使用，建议将异常处理完毕后，格口自动恢复正常，手动忽略异常存在一定的盗章风险",
-          "忽略异常",
-          {
-            confirmButtonText: "确定",
-            cancelButtonText: "取消",
-            confirmButtonClass: "confirm",
-            cancelButtonClass: "cancel",
-            type: "warning",
-          }
-        )
-          .then(() => {
-            updateIgnoreException(query).then(() => {
-              this.boxErrorIgnore = !this.boxErrorIgnore;
-              this.$bus.$emit("ignoreOperate", true);
-            });
-          })
-          .catch(() => {});
-      } else {
-        updateIgnoreException(query).then(() => {
-          this.boxErrorIgnore = !this.boxErrorIgnore;
-          this.$bus.$emit("ignoreOperate", true);
-        });
-      }
-    },
     // 盘点
     handlePan(item) {
       if (item.enable) {

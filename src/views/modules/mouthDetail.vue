@@ -78,7 +78,9 @@
                 </div>
               </div>
               <div class="box-btns">
-                <div class="common-btn box-btn">开锁</div>
+                <div class="common-btn box-btn" @click="handleUnlock(12)">
+                  开锁
+                </div>
                 <div class="ignore-btn" style="margin: 0">解绑</div>
               </div>
             </div>
@@ -136,12 +138,25 @@
           </el-tab-pane>
         </el-tabs>
         <div class="buttons">
-          <div class="ignore-btn" v-show="activeName === 'first'">忽略异常</div>
-          <div class="ignore-btn" v-show="activeName === 'second'">开锁</div>
+          <div
+            class="ignore-btn"
+            v-show="activeName === 'first'"
+            @click="errorIgnore"
+          >
+            <span v-if="!boxErrorIgnore">忽略异常</span>
+            <span v-else>恢复异常</span>
+          </div>
+          <div
+            class="ignore-btn"
+            v-show="activeName === 'second'"
+            @click="handleUnlock(12)"
+          >
+            开锁
+          </div>
           <div class="ignore-btn" v-if="platform !== 'pc' && boundSeal">
             绑定印章
           </div>
-          <div class="common-btn">盘点</div>
+          <div class="common-btn" @click="handlePan(12)">盘点</div>
         </div>
       </div>
     </el-dialog>
@@ -149,8 +164,11 @@
 </template>
 
 <script>
+import { updateIgnoreException } from "../../common/js/api";
+import mixin from "../../mixins/mixins.vue";
 export default {
   name: "MouthDetail",
+  mixins: [mixin],
   props: {
     show: {
       type: Boolean,
@@ -191,6 +209,8 @@ export default {
       boundSealInfo: null,
       isOut: false, // 放入、取出
       isError: true, // 异常、正常
+      id: "",
+      boxErrorIgnore: false,
     };
   },
   created() {
@@ -240,10 +260,45 @@ export default {
             remark: "【智】招投标专用章",
           },
         ];
-      }, 1200);
+      }, 400);
     },
     handleClick(tab, event) {
       console.log(tab, event);
+    },
+
+    // 忽略异常 - 单独组建
+    errorIgnore() {
+      let query = {
+        boxId: this.id,
+        ignore: !this.boxErrorIgnore,
+      };
+      if (!this.boxErrorIgnore) {
+        this.$confirm(
+          "确认忽略异常后，当前格口将允许员工正常使用，建议将异常处理完毕后，格口自动恢复正常，手动忽略异常存在一定的盗章风险",
+          "忽略异常",
+          {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            confirmButtonClass: "confirm",
+            cancelButtonClass: "cancel",
+            type: "warning",
+          }
+        )
+          .then(() => {
+            updateIgnoreException(query).then(() => {
+              this.boxErrorIgnore = !this.boxErrorIgnore;
+              // 刷新父列表
+              this.$parent.getList();
+            });
+          })
+          .catch(() => {});
+      } else {
+        updateIgnoreException(query).then(() => {
+          this.boxErrorIgnore = !this.boxErrorIgnore;
+          // 刷新父列表
+          this.$parent.getList();
+        });
+      }
     },
   },
 };
