@@ -1,0 +1,350 @@
+@import './variables.scss';
+// @import './mixin.scss';
+@import './transition.scss';
+@import './element-ui.scss';
+@import './sidebar.scss';
+@import './btn.scss';
+body {
+  height: 100%;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+}
+
+label {
+  font-weight: 700;
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+#app {
+  height: 100%;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+.no-padding {
+  padding: 0px !important;
+}
+
+.padding-content {
+  padding: 4px 0;
+}
+
+a:focus,
+a:active {
+  outline: none;
+}
+
+a,
+a:focus,
+a:hover {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+div:focus {
+  outline: none;
+}
+
+.fr {
+  float: right;
+}
+
+.fl {
+  float: left;
+}
+
+.pr-5 {
+  padding-right: 5px;
+}
+
+.pl-5 {
+  padding-left: 5px;
+}
+
+.block {
+  display: block;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.inlineBlock {
+  display: block;
+}
+.flex{
+  display: flex;
+}
+.ml-10{
+  margin-left:10px;
+}
+.clearfix {
+  &:after {
+    visibility: hidden;
+    display: block;
+    font-size: 0;
+    content: " ";
+    clear: both;
+    height: 0;
+  }
+}
+
+
+aside {
+  background: #eef1f6;
+  padding: 8px 24px;
+  margin-bottom: 20px;
+  border-radius: 2px;
+  display: block;
+  line-height: 32px;
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  color: #2c3e50;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  a {
+    color: #EBB051;
+    cursor: pointer;
+
+    &:hover {
+      color: #EBB051;
+    }
+  }
+}
+
+//main-container全局样式
+.app-container {
+  padding: 20px;
+}
+
+.components-container {
+  margin: 30px 50px;
+  position: relative;
+}
+
+.pagination-container {
+  margin-top: 30px;
+}
+
+.text-center {
+  text-align: center
+}
+
+.sub-navbar {
+  height: 50px;
+  line-height: 50px;
+  position: relative;
+  width: 100%;
+  text-align: right;
+  padding-right: 20px;
+  transition: 600ms ease position;
+  background: linear-gradient(90deg, rgba(32, 182, 249, 1) 0%, rgba(32, 182, 249, 1) 0%, rgba(33, 120, 241, 1) 100%, rgba(33, 120, 241, 1) 100%);
+
+  .subtitle {
+    font-size: 20px;
+    color: #fff;
+  }
+
+  &.draft {
+    background: #d0d0d0;
+  }
+
+  &.deleted {
+    background: #d0d0d0;
+  }
+}
+
+.link-type,
+.link-type:focus {
+  color: #EBB051;
+  cursor: pointer;
+
+  &:hover {
+    color: #EBB051;
+  }
+}
+
+.filter-container {
+  padding-bottom: 10px;
+
+  .filter-item {
+    display: inline-block;
+    vertical-align: middle;
+    margin-bottom: 10px;
+  }
+}
+
+//refine vue-multiselect plugin
+.multiselect {
+  line-height: 16px;
+}
+
+.multiselect--active {
+  z-index: 1000 !important;
+}
+.home {
+  background: #F0F2F5;
+  background:#F9F9F9;
+  .usual-box{
+    position: relative;
+    .clearfix{
+      span{
+        color: #E2AA51;
+        font-size: 16px;
+        font-weight: 500;
+        padding-left: 3px
+      }
+      .slidBorder{
+        width: 2px;
+        height: 22px;
+        background: #E2AA51;
+        position: absolute;
+        left: 0;
+        top: 10px;
+      }
+      .back{
+        position: absolute;
+        right: 44px;
+        top: 4px;
+        padding: 7px 16px;
+        border: 1px solid #C8C6C6;
+        background: #fff;
+        span{
+          color:#333;
+        }
+      }
+    }
+    .clearfix:before,
+    .clearfix:after {
+      display: table;
+      content: "";
+    }
+    .clearfix:after {
+      clear: both
+    }
+    .el-select{
+      width: 100%;
+    }
+    .select-table{
+      text-align: center;
+      .el-pagination{
+        margin: 20px auto;
+        text-align: right;
+        padding-right: 30px;
+      }
+    }
+    .row-select{
+      margin-bottom:10px;
+    }
+  }
+}
+div{
+  // 重置获取焦点时输入框样式
+  :deep.el-input__inner:focus{
+    border:1px solid #D9B986;
+  }
+  :deep.el-textarea__inner:focus{
+    border:1px solid #D9B986;
+  }
+  // 重置单选按钮样式
+  :deep.el-radio__input.is-checked + .el-radio__label {
+    color: #333333;
+  }
+  :deep.el-radio__input.is-checked .el-radio__inner {
+    background: #E6B66B;
+    border-color: #E6B66B;
+  }
+  :deep.el-radio__input .el-radio__inner:hover {
+    border-color: #E6B66B;
+  }
+  // 重置导航样式
+  :deep.el-tabs__item.is-active{
+    color: #E2AA51;
+  }
+  :deep.el-tabs__item:hover{
+    color: #E2AA51;
+  }
+  :deep.el-tabs__active-bar{
+    background-color: #E2AA51;
+  }
+  // 重置按钮样式
+  :deep.el-button--primary{
+    color: #ffffff;
+    background-color: #EBB051;
+    border-color: #EBB051;
+  }
+  :deep.el-button--primary:hover{
+    background-color: #F5BA5C;
+    border-color: #F5BA5C;
+  }
+  :deep.el-button--primary:focus{
+    background-color: #946E31;
+    border-color: #946E31;
+  }
+  :deep.el-button--default{
+    color: #ffffff;
+    background-color: #C8C6C6;
+    border-color: #C8C6C6;
+  }
+  :deep.el-button--default:hover{
+    color: #ffffff;
+    background-color: #C8C6C6;
+    border-color: #C8C6C6;
+  }
+  :deep.el-button--default:focus{
+    color: #ffffff;
+    background-color: #C8C6C6;
+    border-color: #C8C6C6;
+  }
+  // 重置弹窗样式
+  // :deep.el-dialog__body{
+  //   padding: 0;
+  //   padding-top: 30px;
+  // }
+  .div-button{
+    text-align: center;
+    height: 54px;
+    line-height: 54px;
+    margin-top: 100px;
+    background: #F4F5F7;
+  } 
+  :deep.el-dialog__header {
+    padding: 10px 20px;
+    background: #F4F5F7;
+    font-size: 16px;
+    color: #333333;
+  }
+  :deep.el-dialog__headerbtn{
+    top: 12px;
+    right: 12px;
+  }
+  
+  // 重置form长度
+  // :deep.el-select{
+  //   width: 90%;
+  // }
+  // :deep.el-input{
+  //   width: 90%;
+  // }
+}
+.confirm{
+  background: #e2b062 !important;
+  border:1px solid #e2b062 !important;
+}
+.cancel{
+  color: #E8B86C !important;
+  background-color: #ffffff !important;
+  border-color: #E8B86C !important;
+}

@@ -61,6 +61,9 @@
             :boxCode="item.boxCode"
             :boxTypeName="item.boxTypeName"
             @goDetail="goDetail"
+            @unlock="handleUnlock(item)"
+            @check="handlePan(item)"
+            @cancel="handleCancel(item)"
           ></MouthCard>
         </el-col>
         <!-- 尾行占位 -->
@@ -93,9 +96,11 @@ import MouthCard from "../components/mouthCard";
 import MouthDetail from "./modules/mouthDetail";
 import CheckAll from "./modules/checkAll";
 import { boxGetCheckAll, selectExceptionBoxList } from "../common/js/api";
+import mixin from "../mixins/mixins.vue";
 export default {
   name: "MouthList",
   components: { MouthStatus, MouthCard, MouthDetail, CheckAll },
+  mixins: [mixin],
   data() {
     return {
       list: [],
@@ -200,6 +205,7 @@ export default {
       this.detailDialogShow = true;
     },
 
+    // 一键盘点
     checkAll() {
       this.checkAllDialogShow = true;
       boxGetCheckAll({ macAddress: this.terminalGrid }).then((res) => {
@@ -219,6 +225,11 @@ export default {
         // }
       });
       return false;
+    },
+
+    // 注销
+    handleCancel(attr) {
+      console.log(attr, "注销");
     },
   },
 };
@@ -272,6 +283,7 @@ export default {
         line-height: 36px;
         margin-right: 10px;
         cursor: pointer;
+        font-size: 15px;
       }
 
       .check-flex {
@@ -299,7 +311,7 @@ export default {
   }
 }
 
-.el-card ::v-deep .el-card__header {
+:deep.el-card .el-card__header {
   padding: 14px 15px 7px;
 }
 

@@ -1,9 +1,10 @@
 <template>
-  <div class="card-container" @click.stop="goDetail">
+  <div class="card-container">
     <!-- pc -->
     <div
       :class="platform === 'pc' ? 'card-pc' : 'card-terminal'"
       :style="{ border: isCancel ? '1px dashed #c0c4cc' : '' }"
+      @click.stop="goDetail"
     >
       <div class="status-label" v-if="ignoreError">格口异常(已忽略)</div>
       <!-- left / top -->

@@ -61,3 +61,11 @@ export function selectExceptionBoxList(obj) {
     params: obj,
   });
 }
+
+//格口忽略异常设置
+export const updateIgnoreException = (obj) =>
+  request({
+    url: "/boxInfo/updateIgnoreException",
+    method: "get",
+    params: obj,
+  });

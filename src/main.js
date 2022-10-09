@@ -6,7 +6,9 @@ import store from "./store";
 Vue.config.productionTip = false;
 
 import ElementUI from "element-ui";
-import "element-ui/lib/theme-chalk/index.css";
+// import "element-ui/lib/theme-chalk/index.css";
+import "./assets/styles/element-variables.scss";
+import "./assets/styles/index.scss";
 Vue.use(ElementUI);
 
 new Vue({

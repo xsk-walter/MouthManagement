@@ -47,10 +47,6 @@
 .el-main {
   color: #333;
 }
->>> .el-card__body,
-.el-main {
-  padding: 0 !important;
-}
 
 body > .el-container {
   margin-bottom: 40px;
