@@ -209,7 +209,8 @@ export default {
     // 一键盘点
     checkAll() {
       this.checkAllDialogShow = true;
-      boxGetCheckAll({ macAddress: this.terminalGrid }).then((res) => {
+      // this.terminalGrid
+      boxGetCheckAll({ macAddress: "5CCD61187F6E" }).then((res) => {
         console.log(res);
         // let { code, data } = res;
         // if (code == 200) {
@@ -217,7 +218,7 @@ export default {
         //   this.checkBoxInfo = data;
         // }
       });
-      selectExceptionBoxList({ macAddress: this.terminalGrid }).then((res) => {
+      selectExceptionBoxList({ macAddress: "5CCD61187F6E" }).then((res) => {
         console.log(res);
         // let { code, data } = res;
         // if (code == 200) {

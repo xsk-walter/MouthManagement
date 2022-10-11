@@ -135,6 +135,17 @@
               >
               </el-table-column>
             </el-table>
+
+            <el-pagination
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              :current-page="pagination.pageNum"
+              :page-sizes="[10, 20, 30, 40]"
+              :page-size="pagination.pageSize"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="pagination.totalCount"
+            >
+            </el-pagination>
           </el-tab-pane>
         </el-tabs>
         <div class="buttons">
@@ -211,14 +222,20 @@ export default {
       isError: true, // 异常、正常
       id: "",
       boxErrorIgnore: false,
+      pagination: {
+        pageSize: 12,
+        pageNum: 1,
+        totalCount: 0,
+        totalPage: 0,
+      },
     };
   },
   created() {
-    this.getInof();
+    this.getInfo();
   },
 
   methods: {
-    getInof() {
+    getInfo() {
       let that = this;
       that.tableLoading = true;
       setTimeout(() => {
@@ -300,11 +317,27 @@ export default {
         });
       }
     },
+
+    handleSizeChange(val) {
+      this.pagination.pageSize = val;
+      this.pagination.pageNum = 1;
+      this.getInfo();
+    },
+    handleCurrentChange(val) {
+      this.pagination.pageNum = val;
+      this.getInfo();
+    },
   },
 };
 </script>
 
 <style lang="scss">
+div {
+  .el-pagination {
+    margin-top: 20px;
+    text-align: right;
+  }
+}
 .dialog-pc {
   .common-btn {
     width: 90px;

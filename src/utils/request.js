@@ -5,7 +5,7 @@
 import axios from "axios";
 import { Message } from "element-ui";
 // import router from "@/router";
-// import { getToken, setToken } from '@/utils/auth'
+import { getToken } from "@/utils/auth";
 
 /**
  * 请求失败后的错误统一处理
@@ -61,11 +61,7 @@ instance.interceptors.request.use(
       ? config.headers["Content-Type"]
       : "application/json;charset=UTF-8";
 
-    // 待删除
-    // config.headers["Authorization"] =
-    //   "Bearer" +
-    //   " " +
-    //   "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJ3ZWIiLCJpc3MiOiJzbWFydC1jYWJpbmV0IiwiZXhwIjoxNjY0MTYyMjI0LCJ1c2VySWQiOiJjMmQwM2Q2NjJmYzY5NDlhYzIyZDA2NTIwOTAxMWI1ZCIsImlhdCI6MTY2NDE1ODYyNCwianRpIjoiOWU4ZTBlMWM5NTg1NDg3OGI1YmI3ZDJkNzcyNGU5YTkifQ.--sULG8ltha9hjoIK_kifYvVIX-X-HhcatxWgRZYoNw";
+    config.headers["Authorization"] = "Bearer " + getToken();
 
     return config;
   },
