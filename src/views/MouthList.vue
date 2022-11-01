@@ -1,6 +1,6 @@
 <template>
   <div class="container-mouth">
-    <el-card class="box-card" :body-style="bodyStyle">
+    <el-card class="box-card" :body-style="bodyStyle" v-loading="loading">
       <div slot="header" class="clearfix">
         <div class="header-title">格口管理</div>
       </div>
@@ -12,6 +12,7 @@
           v-model="terminalGrid"
           placeholder="请选择终端名称"
           size="small"
+          @change="changeSelect"
         >
           <el-option
             v-for="item in termialOptions"
@@ -22,14 +23,18 @@
           </el-option>
         </el-select>
       </div>
+      <div v-if="mouthLists.length === 0 && !loading" class="emtype-list">
+        <img src="../assets/images/empty_list.png" />
+        <div>还未接入任何印章盒！</div>
+      </div>
 
       <!-- status -->
-      <div class="status">
+      <div class="status" v-if="mouthLists.length !== 0">
         <div class="columns-check">
           <div class="check-button" @click="checkAll">一键盘点</div>
           <u class="check-flex">
-            <div class="check-last">
-              查看最近一次盘点结果(<span>{{ recentlyResult }}</span
+            <div class="check-last" @click="lastTimeCheck">
+              查看最近一次盘点结果(<span>{{ lastCheckTime }}</span
               >)
             </div>
           </u>
@@ -57,10 +62,10 @@
             :inBoxState="item.inBoxState"
             :bindState="item.bindState"
             :cancel="item.cancel"
-            :ignoreError="item.ignoreError"
+            :ignoreException="item.ignoreException"
             :boxCode="item.boxCode"
-            :boxTypeName="item.boxTypeName"
-            @goDetail="goDetail"
+            :productName="item.productName"
+            @goDetail="goDetail(item)"
             @unlock="handleUnlock(item)"
             @check="handlePan(item)"
             @cancel="handleCancel(item)"
@@ -80,22 +85,35 @@
     <MouthDetail
       v-if="detailDialogShow"
       :show.sync="detailDialogShow"
+      :id="select_box_id"
+      :mac-address="terminalGrid"
     ></MouthDetail>
     <!-- 一键盘点弹窗 -->
     <CheckAll
       v-if="checkAllDialogShow"
       :show.sync="checkAllDialogShow"
+      :info="checkBoxInfo"
+      :list="boxInfoList"
+      :macAddress="terminalGrid"
     ></CheckAll>
   </div>
 </template>
 
 <script>
-// import { mouthSelect } from "../common/js/api";
+import { mouthSelect } from "../common/js/api";
 import MouthStatus from "../components/mouthStatus";
 import MouthCard from "../components/mouthCard";
 import MouthDetail from "./modules/mouthDetail";
 import CheckAll from "./modules/checkAll";
-import { boxGetCheckAll, selectExceptionBoxList } from "../common/js/api";
+import { setToken } from "@/utils/auth";
+import {
+  boxGetCheckAll,
+  selectExceptionBoxList,
+  grid_list,
+  service_list,
+  getCabinetInvokeInfo,
+  findLastCheckRecode,
+} from "../common/js/api";
 import mixin from "../mixins/mixins.vue";
 export default {
   name: "MouthList",
@@ -109,129 +127,137 @@ export default {
       },
       termialOptions: [],
       terminalGrid: "",
-      recentlyResult: "2022-02-02",
       mouthLists: [],
       platform: "pc", // 平台
       detailDialogShow: false,
       checkAllDialogShow: false,
+      // 一键盘点弹窗信息
+      checkBoxInfo: {}, //盘点汇总格口数据
+      boxInfoList: [], // 异常列表
+      select_box_id: "",
+      loading: true,
+      lastCheckTime: "",
     };
   },
+  inject: ["noticeFromApp"],
+  computed: {
+    updateList() {
+      return this.noticeFromApp();
+    },
+  },
+  watch: {
+    updateList(val) {
+      console.log("硬件-刷新页面响应了", val);
+      this.init();
+    },
+  },
   created() {
-    this.getList();
+    // this.getLoginToken();
+    this.init();
   },
 
   methods: {
-    getList() {
-      console.log(1231231);
-      // mouthSelect().then((res) => {
-      //   if (res.success) {
-      //     this.termialOptions = res.data;
-      //   }
-      // });
-      this.mouthLists = [
-        // 正常 在盒
-        {
-          state: 0,
-          inBoxState: 1,
-          bindState: 1,
-          cancel: 0,
-          ignoreError: 0,
-          boxTypeName: "项目一部财务工程办公合同专用章一",
-          boxCode: "A-1-1",
-        },
-        // 正常 - 取出
-        {
-          state: 0,
-          inBoxState: 0,
-          bindState: 1,
-          cancel: 0,
-          ignoreError: 0,
-          boxTypeName: "项目一部财务工程办公合同专用章二",
-          boxCode: "A-1-2",
-        },
-        // 异常 - 取出
-        // {
-        //   state: -2,
-        //   inBoxState: 0,
-        //   bindState: 1,
-        //   cancel: 0,
-        //   ignoreError: 0,
-        //   boxTypeName: "项目一部财务工程办公合同专用章四",
-        //   boxCode: "A-1-4",
-        // },
-        // 异常 - 放入
-        {
-          state: -1,
-          inBoxState: 1,
-          bindState: 1,
-          cancel: 0,
-          ignoreError: 0,
-          boxTypeName: "项目一部财务工程办公合同专用章五",
-          boxCode: "A-1-5",
-        },
-        // 忽略异常
-        {
-          state: 0,
-          inBoxState: 1,
-          bindState: 1,
-          cancel: 0,
-          ignoreError: 1,
-          boxTypeName: "项目一部财务工程办公合同专用章六",
-          boxCode: "A-1-6",
-        },
-        // 未绑定
-        {
-          state: 0,
-          inBoxState: 1,
-          bindState: 0,
-          cancel: 0,
-          ignoreError: 0,
-          boxTypeName: "项目一部财务工程办公合同专用章七",
-          boxCode: "A-1-7",
-        },
-        // 注销 - 在盒、取出、异常放入、异常取出（未绑定直接不显示）
-        {
-          state: 0,
-          inBoxState: 1,
-          bindState: 1,
-          cancel: 1,
-          ignoreError: 0,
-          boxTypeName: "项目一部财务工程办公合同专用章八",
-          boxCode: "A-1-8",
-        },
-      ];
+    async init() {
+      // 初始化 select-options
+      mouthSelect().then((res) => {
+        this.termialOptions = res.data.filter((item) => item.extra === 3);
+        // 默认 选中 - 初始化
+        this.terminalGrid = this.termialOptions[0].id;
+        this.getList();
+        this.getLastCheckTime();
+      });
+    },
+    async getList() {
+      this.loading = true;
+      // 获取 设备id
+      let result_device = await service_list({
+        macAddress: this.terminalGrid,
+        requestType: "device",
+      });
+      // 获取列表
+      let result_list = await grid_list({
+        macAddress: this.terminalGrid,
+        deviceId: result_device.data[0].id,
+      });
+      // console.log(result_list)
+      // this.mouthLists = [];
+      this.loading = false;
+      this.mouthLists = this.handleData(result_list.data.records);
+      console.log(this.mouthLists, "this.mouthLists", result_list.data.records);
+    },
+
+    changeSelect() {
+      this.getList();
+      this.getLastCheckTime();
+    },
+
+    // 处理列表数组
+    handleData(attr) {
+      let arr = [];
+      if (!attr || attr.length === 0 || !Array.isArray(attr)) return [];
+      attr.forEach((item) => {
+        arr.push({
+          ...item.positionList[0],
+          ignoreException: item.ignoreException,
+        });
+      });
+      return arr;
     },
     // 打开详情
-    goDetail() {
+    goDetail(attr) {
+      let { boxId } = attr;
+      this.select_box_id = boxId;
       this.detailDialogShow = true;
     },
 
     // 一键盘点
     checkAll() {
       this.checkAllDialogShow = true;
-      // this.terminalGrid
-      boxGetCheckAll({ macAddress: "5CCD61187F6E" }).then((res) => {
-        console.log(res);
-        // let { code, data } = res;
-        // if (code == 200) {
-        //   this.checkView = true;
-        //   this.checkBoxInfo = data;
-        // }
+      boxGetCheckAll({ macAddress: this.terminalGrid }).then((res) => {
+        this.checkBoxInfo = res.data;
       });
-      selectExceptionBoxList({ macAddress: "5CCD61187F6E" }).then((res) => {
-        console.log(res);
-        // let { code, data } = res;
-        // if (code == 200) {
-        //   this.ExceptionBoxList = data;
-        //   console.log(this.ExceptionBoxList);
-        // }
+      selectExceptionBoxList({ macAddress: this.terminalGrid }).then((res) => {
+        this.boxInfoList = res.data.length > 0 ? res.data[0].boxInfoList : [];
       });
       return false;
+    },
+
+    // 最后一次盘点
+    lastTimeCheck() {
+      this.checkAll();
+    },
+
+    // 最近一次盘点时间
+    getLastCheckTime() {
+      findLastCheckRecode({
+        checkType: "remoteAllCheck",
+        macAddress: this.terminalGrid,
+      }).then((res) => {
+        this.lastCheckTime = res.data ? res.data.checkTime : "-";
+      });
     },
 
     // 注销
     handleCancel(attr) {
       console.log(attr, "注销");
+      // offBox({ boxId: attr })
+      //   .then(() => {
+      //     this.$message({
+      //       message: "注销成功",
+      //       type: "success",
+      //     });
+      //   })
+      //   .catch(() => {});
+    },
+
+    // 获取token
+    getLoginToken() {
+      getCabinetInvokeInfo().then((res) => {
+        console.log(res.data.token, res.data.host, "===", res);
+        setToken("Admin-Token", res.data.token);
+        localStorage.setItem("box_host", res.data.host);
+        this.init();
+      });
     },
   },
 };
@@ -243,7 +269,7 @@ export default {
 }
 .box-card {
   margin: 10px;
-
+  min-height: 600px;
   .header-title {
     position: relative;
     line-height: 25px;
@@ -267,6 +293,24 @@ export default {
       font-size: 16px;
       color: #323232;
       margin-right: 20px;
+    }
+  }
+
+  .emtype-list {
+    display: flex;
+    height: 500px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: PingFangSC-Medium;
+    font-weight: 500;
+    font-size: 24px;
+    color: #666666;
+    text-align: center;
+
+    img {
+      width: 540px;
+      height: 234px;
     }
   }
 

@@ -6,7 +6,10 @@
       :style="{ border: isCancel ? '1px dashed #c0c4cc' : '' }"
       @click.stop="goDetail"
     >
-      <div class="status-label" v-if="ignoreError">格口异常(已忽略)</div>
+      <div class="status-label" v-if="ignoreException">格口异常(已忽略)</div>
+      <div class="status-label" v-if="isError && !ignoreException">
+        格口异常
+      </div>
       <!-- left / top -->
       <div class="card-column left">
         <div
@@ -35,7 +38,7 @@
           <!-- <img :src="require(`../assets/images/${handleImgUrl}`)" /> -->
         </div>
         <div class="card-name name-style" v-if="isBound">
-          {{ boxTypeName }}
+          {{ productName }}
         </div>
         <div class="card-name name-style" v-else>未绑定印章</div>
       </div>
@@ -77,15 +80,16 @@
 </template>
 
 <script>
+// TODO: 终端替换该文件
 /**
  * platform: pc、terminal
- * 卡片信息 boxTypeName 卡片名称、boxCode 格口名称
+ * 卡片信息 productName 卡片名称、boxCode 格口名称
  * 状态对应关系 statusMaps
  * 1. 注销状态 cancel  - 0 、1
  * 2. 异常 state - 0 、 -1、 -2
  * 3. 正常 在盒、取出 - inBoxState 0 、1
  * 4. 绑定、 bindState - 0 、1
- * 5. 忽略异常 0 1
+ * 5. 忽略异常 ignoreException false / true
  * 开锁、盘点、注销、开锁归还  @unlock @check @cancel @unlockReturn
  */
 export default {
@@ -111,11 +115,12 @@ export default {
       type: Number,
       default: 0,
     },
-    ignoreError: {
-      type: Number,
-      default: 0,
+    ignoreException: {
+      default() {
+        return false;
+      },
     },
-    boxTypeName: {
+    productName: {
       type: String,
       default: "-",
     },
@@ -131,7 +136,7 @@ export default {
     },
     // 异常 - 异常背景
     isError() {
-      return this.state !== 0;
+      return this.state !== 0 && this.state;
     },
     // 绑定
     isBound() {
@@ -153,7 +158,8 @@ export default {
     },
     // img - 异常取出
     showImgOutError() {
-      return this.isBound && this.isError && this.state === -2;
+      // return this.isBound && this.isError && this.state === -2;
+      return this.state === -2;
     },
     // 处理图片展示路径
     handleImgUrl() {

@@ -1,39 +1,32 @@
 <script>
-import { ischeckAll, unLock, check_goods } from "../common/js/api";
+import { unLock, check_goods } from "../common/js/api";
 
 export default {
   methods: {
     // 盘点
-    handlePan(item) {
-      if (item.enable) {
+    handlePan(attr) {
+      if (attr.enable) {
         let param = {
-          macAddress: item.macAddress,
-          boxId: item.id,
-          lock: 1,
+          macAddress: attr.macAddress,
+          boxId: attr.id,
+          boxCode: attr.boxCode,
         };
-        ischeckAll(param).then((res) => {
-          if (res.code == 200) {
-            if (res.data.allowed) {
-              this.$message.info("格口盘点中...");
-              let param = {
-                macAddress: item.macAddress,
-                boxId: item.id,
-                boxCode: item.boxCode,
-                boxLockIp: item.boxLockIp,
-              };
-              check_goods(param).then(() => {});
-            } else {
-              this.$message({
-                message: res.data.message,
-                type: "warning",
-              });
-            }
-          }
+        this.$message({
+          message: "格口盘点中...",
+          type: "info",
+        });
+        this.pan_flag = true;
+        check_goods(param).then(() => {
+          // 盘点成功
+          // this.$message({
+          //   message: "盘点成功",
+          //   type: "success",
+          // });
         });
       } else {
         this.$message({
           message: "当前格口禁用中",
-          type: "warning",
+          type: "info",
         });
       }
     },
@@ -49,28 +42,16 @@ export default {
         }
       )
         .then(() => {
-          let param = {
+          let data = {
             macAddress: row.macAddress,
             boxId: row.id,
-            lock: 1,
+            boxCode: row.boxCode,
           };
-          ischeckAll(param).then((res) => {
-            if (res.code == 200) {
-              if (res.data.allowed) {
-                let data = {
-                  macAddress: this.changeCase(this.terminalGrid),
-                  boxId: row.id,
-                  boxCode: row.boxCode,
-                  boxLockIp: row.boxLockIp,
-                };
-                unLock(data).then(() => {});
-              } else {
-                this.$message({
-                  message: res.data.message,
-                  type: "warning",
-                });
-              }
-            }
+          unLock(data).then(() => {
+            this.$message({
+              type: "success",
+              message: "开锁成功",
+            });
           });
         })
         .catch(() => {

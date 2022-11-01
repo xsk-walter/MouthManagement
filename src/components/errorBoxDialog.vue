@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    title="异常印章列表"
+    :title="title"
     :visible.sync="dialogVisible"
     width="980px"
     class="coustomErrorStyle"
@@ -94,9 +94,15 @@ export default {
         return [];
       },
     },
+    outText: {
+      type: String,
+      default: "",
+    },
   },
   data() {
-    return {};
+    return {
+      title: "",
+    };
   },
   computed: {
     dialogVisible: {
@@ -107,6 +113,10 @@ export default {
         this.$emit("update:show", val);
       },
     },
+  },
+  created() {
+    // 处理title
+    this.title = this.outText + `印章列表`;
   },
   methods: {},
 };

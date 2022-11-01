@@ -1,30 +1,35 @@
-/**
- * axios封装
- * 请求拦截、响应拦截、错误统一处理
- */
 import axios from "axios";
+import { getCabinetInvokeInfo } from "../common/js/api";
 import { Message } from "element-ui";
-// import router from "@/router";
-import { getToken } from "@/utils/auth";
+import { setToken, getToken } from "@/utils/auth";
+import router from "../router/index";
+// 创建axios实例
+const instance = axios.create({
+  baseURL: process.env.VUE_APP_BASE_URL,
+  timeout: "10000",
+});
+const pendingMap = new Map();
 
-/**
- * 请求失败后的错误统一处理
- * @param {Number} status 请求失败的状态码
- */
+// 被挂起的请求数组
+let refreshSubscribers = [];
+
+// push所有请求到数组中
+function subscribeTokenRefresh(cb) {
+  refreshSubscribers.push(cb);
+}
+
+// 刷新请求
+function onRrefreshed(token) {
+  refreshSubscribers.map((cb) => cb(token));
+}
+// 白名单
+const whiteLists = ["/cabinet/getCabinetInvokeInfo.htm"];
+
 const errorHandle = (status, response) => {
-  // 状态码判断
-  if (status == 401) {
-    // 401: token失效，跳转登录页
-    // store.dispatch('LogOut').then(() => {
-    // location.href = '/#/home?hasInit=true'
-    // router.replace({
-    //   path: "/home",
-    //   query: {
-    //     hasInit: true,
-    //   },
-    // });
-    window.location.href = "/index.htm";
-    // })
+  if (status === 401) {
+    router.replace({
+      path: "/404",
+    });
     return Promise.reject(response);
   } else {
     Message({
@@ -35,19 +40,11 @@ const errorHandle = (status, response) => {
     return Promise.reject(response);
   }
 };
-// 创建axios实例
-const instance = axios.create({
-  // axios中请求配置有baseURL选项，表示请求URL公共部分
-  baseURL: process.env.VUE_APP_BASE_URL,
-  // 超时
-  timeout: "10000",
-  // 10000
-});
-/**
- * 请求拦截器
- */
+// 请求拦截器
 instance.interceptors.request.use(
-  async (config) => {
+  (config) => {
+    removePending(config);
+    addPending(config);
     if (config.method == "post") {
       config.data = {
         ...config.data,
@@ -61,25 +58,53 @@ instance.interceptors.request.use(
       ? config.headers["Content-Type"]
       : "application/json;charset=UTF-8";
 
-    config.headers["Authorization"] = "Bearer " + getToken();
+    if (process.env.NODE_ENV === "development") {
+      config.headers["Authorization"] =
+        "Bearer " +
+        "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJ3ZWIiLCJpc3MiOiJzbWFydC1jYWJpbmV0IiwiZXhwIjoxNjY3MjcxOTY4LCJ1c2VySWQiOiJjMmQwM2Q2NjJmYzY5NDlhYzIyZDA2NTIwOTAxMWI1ZCIsImlhdCI6MTY2NzI2ODM2OCwianRpIjoiZDliZWZkNDdmYzVkNDVjZjljNTQ1OWZkMGE5YzYwMzMifQ.B_gjQ0AzyogRqQa-BBY6Jgf3E07cKJ8SMyCoYt7IgrA"
+      return config;
+    }
+    if (localStorage.getItem("box_host") && getToken("Admin-Token")) {
+      // 有无本地存储
+      config.baseURL = localStorage.getItem("box_host");
+      config.headers["Authorization"] = "Bearer " + getToken("Admin-Token");
+      return config;
+    } else if (whiteLists.indexOf(config.url) === -1) {
+      // 非白名单
+      getCabinetInvokeInfo().then((res) => {
+        setToken("Admin-Token", res.data.token);
+        localStorage.setItem("box_host", res.data.host);
+        onRrefreshed(res.data.token);
+        /* 执行onRefreshed函数后清空数组中保存的请求 */
+        refreshSubscribers = [];
+      });
 
-    return config;
+      /* 把请求缓存到一个数组中 */
+      let retry = new Promise((resolve) => {
+        subscribeTokenRefresh((token) => {
+          config.baseURL = localStorage.getItem("box_host");
+          config.headers["Authorization"] = "Bearer " + token;
+          /* 将请求挂起 */
+          resolve(config);
+        });
+      });
+
+      return retry;
+    } else {
+      return config;
+    }
   },
   (error) => Promise.error(error)
 );
 
-// 响应拦截器
 instance.interceptors.response.use(
   // 请求成功
   (res) => {
+    if (res.data.code === 5000) {
+      res.data && errorHandle(res.data.code, res);
+      return;
+    }
     if (res.status === 200) {
-      if (res.data.code != 200) {
-        Message({
-          message: res.data.message,
-          type: "warning",
-          duration: 5 * 1000,
-        });
-      }
       return Promise.resolve(res.data);
     } else if (res.status === 211) {
       return Promise.resolve(res.data);
@@ -87,31 +112,51 @@ instance.interceptors.response.use(
       return Promise.reject(res.data);
     }
   },
-  // 请求失败
   (error) => {
-    let { response, message } = error;
+    let { response } = error;
     if (response) {
-      errorHandle(response.status, response);
-    } else {
-      if (!window.navigator.onLine) {
-        console.log(123);
-      } else {
-        if (message == "Network Error") {
-          message = "服务器连接异常，请联系管理员";
-        } else if (message.includes("timeout")) {
-          message = "系统接口请求超时";
-        } else if (message.includes("Request failed with status code")) {
-          message = "系统接口" + message.substr(message.length - 3) + "异常";
-        }
-        Message({
-          message: message,
-          type: "warning",
-          duration: 5 * 1000,
-        });
-        return Promise.reject(error);
-      }
+      response.status && errorHandle(response.status, response);
     }
   }
 );
+
+/**
+ * 储存每个请求的唯一cancel回调, 以此为标识
+ * @param {*} config
+ */
+function addPending(config) {
+  const pendingKey = getPendingKey(config);
+  config.cancelToken =
+    config.cancelToken ||
+    new axios.CancelToken((cancel) => {
+      if (!pendingMap.has(pendingKey)) {
+        pendingMap.set(pendingKey, cancel);
+      }
+    });
+}
+
+/**
+ * 删除重复的请求
+ * @param {*} config
+ */
+function removePending(config) {
+  const pendingKey = getPendingKey(config);
+  if (pendingMap.has(pendingKey)) {
+    const cancelToken = pendingMap.get(pendingKey);
+    cancelToken(pendingKey);
+    pendingMap.delete(pendingKey);
+  }
+}
+
+/**
+ * 生成唯一的每个请求的唯一key
+ * @param {*} config
+ * @returns
+ */
+function getPendingKey(config) {
+  let { url, method, params, data } = config;
+  if (typeof data === "string") data = JSON.parse(data); // response里面返回的config.data是个字符串对象
+  return [url, method, JSON.stringify(params), JSON.stringify(data)].join("&");
+}
 
 export default instance;

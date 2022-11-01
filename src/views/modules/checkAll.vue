@@ -18,14 +18,14 @@
               <div class="boxCount">
                 <div>格口总数</div>
                 <div class="num" style="color: #e2b062">
-                  {{ checkBoxInfo.boxCount || "-" }}
+                  {{ checkBoxInfo.boxCount || 0 }}
                 </div>
               </div>
               <div class="item-line"></div>
               <div class="bindCount">
                 <div>已绑定印章</div>
                 <div class="num" style="color: #3681ff">
-                  {{ checkBoxInfo.bindCount || "-" }}
+                  {{ checkBoxInfo.bindCount || 0 }}
                 </div>
               </div>
             </div>
@@ -33,14 +33,14 @@
               <div class="shouldInCount">
                 <div>应在柜印章</div>
                 <div class="num" style="color: #e2b062">
-                  {{ checkBoxInfo.shouldInCount || "-" }}
+                  {{ checkBoxInfo.shouldInCount || 0 }}
                 </div>
               </div>
               <div class="item-line"></div>
               <div class="inCount">
                 <div>实在柜印章</div>
                 <div class="num" style="color: #e2b062">
-                  {{ checkBoxInfo.inCount || "-" }}
+                  {{ checkBoxInfo.inCount || 0 }}
                 </div>
               </div>
             </div>
@@ -48,21 +48,21 @@
               <div class="shouldOutCount" @click.stop="viewOutSeal(2)">
                 <div>应被取出印章</div>
                 <div class="num" style="color: #626262">
-                  {{ checkBoxInfo.shouldOutCount || "-" }}
+                  {{ checkBoxInfo.shouldOutCount || 0 }}
                 </div>
               </div>
               <!-- <div class="item-line"></div> -->
               <div class="outCount" @click.stop="viewOutSeal(1)">
                 <div>实被取出印章</div>
                 <div class="num" style="color: #626262">
-                  {{ checkBoxInfo.outCount || "-" }}
+                  {{ checkBoxInfo.outCount || 0 }}
                 </div>
               </div>
             </div>
           </div>
         </div>
         <!-- <div class="center-line"></div> -->
-        <div class="box-error" v-if="ExceptionBoxList.length <= 0">
+        <div class="box-error" v-if="errorList.length > 0">
           <div class="top">
             <span></span>
             <p>异常格口</p>
@@ -71,17 +71,16 @@
             <div class="error-list" v-if="true">
               <div
                 class="item"
-                v-for="(item, index) in 16"
-                :key="index"
+                v-for="item in errorList"
+                :key="item.id"
                 @click.stop="getErrorList(item)"
               >
-                <!-- {{ item.boxCode }} -->
-                {{ item }}
+                {{ item.boxCode }}
               </div>
             </div>
           </div>
         </div>
-        <div class="box-error box-error-no" v-if="ExceptionBoxList.length > 0">
+        <div class="box-error box-error-no" v-if="errorList.length <= 0">
           <img src="../../assets/images/no-error.png" />
           <p>暂无异常格口数据</p>
         </div>
@@ -91,13 +90,15 @@
     <ErrorBoxDialogVue
       :show.sync="errorListShow"
       :list="errorSealList"
+      :macAddress="macAddress"
+      :outText="outText"
       v-if="errorListShow"
     ></ErrorBoxDialogVue>
   </el-dialog>
 </template>
 
 <script>
-import { boxGoodsList } from "@/common/js/api.js";
+import { boxGoodsList, boxProductPageByState } from "@/common/js/api.js";
 // 错误 详情表格
 import ErrorBoxDialogVue from "../../components/errorBoxDialog";
 export default {
@@ -111,15 +112,31 @@ export default {
       type: String,
       default: "pc",
     },
+    info: {
+      type: Object,
+      default() {
+        return {};
+      },
+    },
+    list: {
+      type: Array,
+      default() {
+        return [];
+      },
+    },
+    macAddress: {
+      type: String,
+      default: "",
+    },
   },
   components: { ErrorBoxDialogVue },
   data() {
     return {
-      checkBoxInfo: {}, //盘点汇总格口数据
-      ExceptionBoxList: [], //异常柜机
       errorSealList: [], //异常印章列表
       errorListShow: false,
       outText: "异常",
+      takeOutShow: false,
+      takeOutList: [],
     };
   },
   computed: {
@@ -129,6 +146,16 @@ export default {
       },
       set(val) {
         this.$emit("update:show", val);
+      },
+    },
+    checkBoxInfo: {
+      get() {
+        return this.info;
+      },
+    },
+    errorList: {
+      get() {
+        return this.list;
       },
     },
   },
@@ -153,6 +180,26 @@ export default {
           }
         }
       });
+    },
+    // 取出列表详情
+    viewOutSeal(type) {
+      this.outText = type > 1 ? "应被取出" : "实被取出";
+      boxProductPageByState({ type: type, macAddress: this.macAddress }).then(
+        (res) => {
+          let { code, data } = res;
+          if (code == 200) {
+            this.errorSealList = data.records ? data.records : [];
+            if (this.errorSealList.length <= 0) {
+              this.$message({
+                message: `未查询到${type > 1 ? "应被取出" : "实被取出"}印章`,
+                type: "warning",
+              });
+              return;
+            }
+            this.errorListShow = true;
+          }
+        }
+      );
     },
   },
 };

@@ -7,36 +7,41 @@
       class="coustomStyle"
       :class="platform === 'pc' ? 'dialog-pc' : 'dialog-terminal'"
       :fullscreen="dialogFullscreen"
-      v-loading="tableLoading"
+      v-loading="loading"
     >
       <div slot="title" class="title">格口详情</div>
 
       <!-- info -->
       <div class="info">
         <div class="column">
-          <div class="top">{{ mouthInfo && mouthInfo.code }}</div>
+          <div class="top">{{ mouthInfo.boxCode }}</div>
           <div class="bottom">格口编号</div>
         </div>
         <div class="column">
           <div class="top">
-            {{ mouthInfo && mouthInfo.lockStatus ? "关" : "开" }}
+            {{ mouthInfo.positionIsClosed ? "关" : "开" }}
           </div>
           <div class="bottom">锁控状态</div>
         </div>
         <div class="column">
-          <div class="top">{{ mouthInfo && mouthInfo.mouthStatus }}</div>
+          <div class="top">
+            {{ mouthInfo.state === 0 ? "正常" : "异常" }}
+          </div>
           <div class="bottom">格口状态</div>
         </div>
-        <div class="common-btn">停用</div>
+        <div class="common-btn" @click="handleBlock">
+          <span v-if="mouthInfo.enable">停用</span>
+          <span v-else>启用</span>
+        </div>
       </div>
       <!-- 分割线 -->
       <el-divider></el-divider>
       <!-- tabbar -->
       <div class="tabbar">
-        <el-tabs v-model="activeName" @tab-click="handleClick">
+        <el-tabs v-model="activeName">
           <!-- 绑定印章 -->
           <el-tab-pane label="绑定印章" name="first">
-            <div class="detail-box">
+            <div class="detail-box" v-if="isBound">
               <div class="img-box img-common">
                 <!-- 放入、异常 -->
                 <img src="../../assets/images/status_in.png" v-show="!isOut" />
@@ -45,8 +50,10 @@
               </div>
               <div class="info-box">
                 <div class="info-box-title">
-                  {{ boundSealInfo && boundSealInfo.boxName }}
-                  <span class="info-code"
+                  {{ boundSealInfo && boundSealInfo.productName }}
+                  <span
+                    class="info-code"
+                    v-if="boundSealInfo && boundSealInfo.boxCode"
                     >({{ boundSealInfo && boundSealInfo.boxCode }})</span
                   >
                 </div>
@@ -56,40 +63,48 @@
                     isError ? 'info-box-tag-error' : 'info-box-tag-normal'
                   "
                 >
-                  <div class="box-tag box-tag-error" v-show="isError">
-                    {{ boundSealInfo && boundSealInfo.boxStatus }}
+                  <div class="box-tag box-tag-error" v-if="isError">
+                    {{ handleFormat(isError, isOut) }}
                   </div>
-                  <div class="box-tag box-tag-normal" v-show="!isError">
-                    <!-- {{ boundSealInfo && boundSealInfo.boxStatus }} -->
-                    不在柜
+                  <div class="box-tag box-tag-normal" v-if="!isError">
+                    {{ handleFormat(isError, isOut) }}
                   </div>
                   <div class="box-person">
-                    操作人: {{ boundSealInfo && boundSealInfo.operationPerson }}
+                    操作人: {{ boundSealInfo && boundSealInfo.personName }}
                   </div>
                   <div class="box-time">
-                    |&nbsp;{{ boundSealInfo && boundSealInfo.operationTime }}
+                    |&nbsp;{{ boundSealInfo && boundSealInfo.updateTime }}
                   </div>
                   <div
                     class="box-log"
-                    v-show="boundSealInfo && boundSealInfo.operationLog"
+                    v-show="boundSealInfo && boundSealInfo.exceptionRemark"
                   >
-                    |&nbsp;{{ boundSealInfo && boundSealInfo.operationLog }}
+                    |&nbsp;{{ boundSealInfo && boundSealInfo.exceptionRemark }}
                   </div>
                 </div>
               </div>
               <div class="box-btns">
-                <div class="common-btn box-btn" @click="handleUnlock(12)">
+                <div
+                  class="common-btn box-btn"
+                  @click="handleUnlock(mouthInfo)"
+                >
                   开锁
                 </div>
-                <div class="ignore-btn" style="margin: 0">解绑</div>
+                <!-- <div class="ignore-btn" style="margin: 0">解绑</div> -->
               </div>
+            </div>
+            <div class="detail-no-bound" v-else>
+              <img src="../../assets/images/Empty.png" />
+              <div>未绑定印章</div>
             </div>
           </el-tab-pane>
           <!-- 流程记录 -->
           <el-tab-pane label="流程记录" name="second">
             <el-table
+              v-loading="tableLoading"
               :data="tableData"
               stripe
+              :row-key="id"
               style="width: 100%; margin-top: 10px"
               :header-cell-style="{
                 background: '#FAFAFA',
@@ -103,25 +118,25 @@
               <el-table-column
                 label="序号"
                 type="index"
-                width="80"
+                width="60"
                 align="center"
               ></el-table-column>
               <el-table-column
-                prop="operationPerson"
+                prop="personName"
                 label="操作人"
-                min-width="180"
+                min-width="90"
                 align="center"
               >
               </el-table-column>
               <el-table-column
-                prop="operationTime"
+                prop="crateDate"
                 label="操作时间"
-                min-width="180"
+                min-width="120"
                 align="center"
               >
               </el-table-column>
               <el-table-column
-                prop="operationLog"
+                prop="optCmd"
                 label="操作记录"
                 min-width="120"
                 align="center"
@@ -139,7 +154,7 @@
             <el-pagination
               @size-change="handleSizeChange"
               @current-change="handleCurrentChange"
-              :current-page="pagination.pageNum"
+              :current-page="pagination.pageIndex"
               :page-sizes="[10, 20, 30, 40]"
               :page-size="pagination.pageSize"
               layout="total, sizes, prev, pager, next, jumper"
@@ -151,23 +166,23 @@
         <div class="buttons">
           <div
             class="ignore-btn"
-            v-show="activeName === 'first'"
+            v-show="activeName === 'first' && isError"
             @click="errorIgnore"
           >
-            <span v-if="!boxErrorIgnore">忽略异常</span>
+            <span v-if="!mouthInfo.ignoreException">忽略异常</span>
             <span v-else>恢复异常</span>
           </div>
           <div
             class="ignore-btn"
             v-show="activeName === 'second'"
-            @click="handleUnlock(12)"
+            @click="handleUnlock(mouthInfo)"
           >
             开锁
           </div>
           <div class="ignore-btn" v-if="platform !== 'pc' && boundSeal">
             绑定印章
           </div>
-          <div class="common-btn" @click="handlePan(12)">盘点</div>
+          <div class="common-btn" @click="handlePan(mouthInfo)">盘点</div>
         </div>
       </div>
     </el-dialog>
@@ -175,7 +190,15 @@
 </template>
 
 <script>
-import { updateIgnoreException } from "../../common/js/api";
+import { Promise } from "q";
+import {
+  updateIgnoreException,
+  box_detail_info,
+  box_log_list,
+  boxGoodsList,
+  isAdminUnlockingAllowed,
+  boxAttrBan,
+} from "../../common/js/api";
 import mixin from "../../mixins/mixins.vue";
 export default {
   name: "MouthDetail",
@@ -185,15 +208,13 @@ export default {
       type: Boolean,
       default: false,
     },
-    mouthInfo: {
-      type: Object,
-      default: () => {
-        return {
-          code: "A-1-1",
-          lockStatus: true,
-          mouthStatus: "异常",
-        };
-      },
+    id: {
+      type: String,
+      default: "",
+    },
+    macAddress: {
+      type: String,
+      default: "",
     },
     platform: {
       type: String,
@@ -210,24 +231,39 @@ export default {
       },
     },
   },
+  watch: {
+    activeName: {
+      immediate: true,
+      handler(val) {
+        val === "second" && this.getLogList();
+      },
+    },
+  },
   data() {
     return {
       activeName: "first",
       tableData: [],
       dialogFullscreen: false,
+      loading: false,
       tableLoading: false,
       boundSeal: true,
       boundSealInfo: null,
-      isOut: false, // 放入、取出
-      isError: true, // 异常、正常
-      id: "",
-      boxErrorIgnore: false,
+      isOut: undefined, // 放入、取出
+      isError: undefined, // 异常、正常
+      // ignoreException: false,
       pagination: {
-        pageSize: 12,
-        pageNum: 1,
+        pageSize: 10,
+        pageIndex: 1,
         totalCount: 0,
         totalPage: 0,
       },
+      mouthInfo: {
+        boxCode: "", // 格口编码
+        positionIsClosed: false, // 锁控状态
+        state: "", // 0 正常、-1异常
+        enable: true,
+      },
+      isBound: true, // 绑定印章
     };
   },
   created() {
@@ -235,61 +271,91 @@ export default {
   },
 
   methods: {
+    // 初始化获取信息
     getInfo() {
       let that = this;
-      that.tableLoading = true;
-      setTimeout(() => {
-        that.tableLoading = false;
-        // 绑定印章信息
-        this.boundSealInfo = {
-          boxName:
-            "华东分区购销分区购销分区购销分区购销分区购销分区购销购合同章",
-          boxCode: "E281166000",
-          boxStatus: "异常放入",
-          operationPerson: "刘德华",
-          operationTime: "08/22 09:00",
-          operationLog: "不属于该印章盒",
-        };
-        // 流程记录列表
-        that.tableData = [
-          {
-            operationPerson: "郭光林",
-            operationTime: "2022-01-02 09:00",
-            operationLog: "启用",
-            remark: "开锁类型：领取印章",
-          },
-          {
-            operationPerson: "汤博",
-            operationTime: "2022-01-12 09:00",
-            operationLog: "关门",
-            remark: "【智】招投标专用章(异常)",
-          },
-          {
-            operationPerson: "郭光林",
-            operationTime: "2022-01-02 09:00",
-            operationLog: "启用",
-            remark: "【智】招投标专用章(已归还)",
-          },
-          {
-            operationPerson: "郭光林",
-            operationTime: "2022-08-02 09:00",
-            operationLog: "接入印章",
-            remark: "【智】招投标专用章",
-          },
-        ];
-      }, 400);
-    },
-    handleClick(tab, event) {
-      console.log(tab, event);
-    },
+      // box_detail_info(param).then((res) => {
+      //   this.mouthInfo = res.data;
+      //   this.boxErrorIgnore = res.data.boxErrorIgnore;
+      //   this.loading = false;
+      // });
 
+      // boxGoodsList({
+      //   macAddress: this.macAddress,
+      //   boxId: this.id,
+      // }).then((res) => {
+      //   this.boundSealInfo = res.data[0];
+      //   // 是否绑定
+      //   this.isBound = res.data.length > 0;
+      //   // 在不在盒
+      //   this.isOut = this.isBound ? res.data[0].inBoxState === 0 : false;
+      //   // 是否异常 0异常、1正常
+      //   this.isError = this.isBound ? res.data[0].state === -1 : false;
+      // });
+      this.loading = true;
+      let param = {
+        macAddress: this.macAddress,
+        id: this.id,
+      };
+      let p1 = function () {
+        return new Promise((resolve, reject) => {
+          box_detail_info(param).then((res) => {
+            if (!res.success) {
+              reject();
+            }
+            that.mouthInfo = res.data;
+            console.log(res, "返回的详情====");
+            that.boxErrorIgnore = res.data.boxErrorIgnore;
+            that.loading = false;
+            resolve();
+          });
+        });
+      };
+      let p2 = function () {
+        return new Promise((resolve, reject) => {
+          boxGoodsList({
+            macAddress: that.macAddress,
+            boxId: that.id,
+          }).then((res) => {
+            if (!res.success) {
+              reject();
+            }
+            that.boundSealInfo = res.data[0];
+            // 是否绑定
+            that.isBound = res.data.length > 0;
+            // 在不在盒
+            that.isOut = that.isBound ? res.data[0].inBoxState === 0 : false;
+            // 是否异常 0异常、1正常
+            that.isError = that.isBound ? res.data[0].state === -1 : false;
+            resolve();
+          });
+        });
+      };
+      Promise.all([p1(), p2()]).finally(() => {
+        that.loading = false;
+      });
+    },
+    // 获取日志记录
+    getLogList() {
+      this.tableLoading = true;
+      box_log_list({
+        boxId: this.id,
+        pageSize: this.pagination.pageSize,
+        pageIndex: this.pagination.pageIndex,
+      }).then((res) => {
+        console.log(res);
+        this.tableData = res.data.records;
+        this.tableLoading = false;
+        this.pagination.totalCount = res.data.total;
+      });
+    },
     // 忽略异常 - 单独组建
     errorIgnore() {
       let query = {
         boxId: this.id,
-        ignore: !this.boxErrorIgnore,
+        ignore: !this.mouthInfo.ignoreException,
       };
-      if (!this.boxErrorIgnore) {
+      if (!this.mouthInfo.ignoreException) {
         this.$confirm(
           "确认忽略异常后，当前格口将允许员工正常使用，建议将异常处理完毕后，格口自动恢复正常，手动忽略异常存在一定的盗章风险",
           "忽略异常",
@@ -302,30 +368,86 @@ export default {
           }
         )
           .then(() => {
-            updateIgnoreException(query).then(() => {
-              this.boxErrorIgnore = !this.boxErrorIgnore;
+            updateIgnoreException(query).then((res) => {
+              if (!res.success) return;
+              this.mouthInfo.ignoreException = !this.mouthInfo.ignoreException;
               // 刷新父列表
               this.$parent.getList();
             });
           })
           .catch(() => {});
       } else {
-        updateIgnoreException(query).then(() => {
-          this.boxErrorIgnore = !this.boxErrorIgnore;
+        updateIgnoreException(query).then((res) => {
+          if (!res.success) return;
+          this.mouthInfo.ignoreException = !this.mouthInfo.ignoreException;
           // 刷新父列表
           this.$parent.getList();
         });
       }
     },
-
+    // 监听分页事件
     handleSizeChange(val) {
       this.pagination.pageSize = val;
-      this.pagination.pageNum = 1;
-      this.getInfo();
+      this.pagination.pageIndex = 1;
+      this.getLogList();
     },
     handleCurrentChange(val) {
-      this.pagination.pageNum = val;
-      this.getInfo();
+      this.pagination.pageIndex = val;
+      this.getLogList();
+    },
+    // 处理在盒状态
+    handleFormat(err, isout) {
+      let str = "";
+      str = err ? (isout ? "异常放入" : "异常取出") : isout ? "不在盒" : "在盒";
+      return str;
+    },
+    // 停用、启用格口
+    handleBlock() {
+      isAdminUnlockingAllowed({ boxId: this.id }).then((res) => {
+        if (res.code == 200) {
+          if (res.data) {
+            let title = `是否确定启用格口${this.mouthInfo.boxCode}？`;
+            if (this.mouthInfo.enable) {
+              title = `是否确定停用格口${this.mouthInfo.boxCode}？`;
+            }
+            let that = this;
+            let obj = {
+              macAddress: that.macAddress,
+              boxId: that.id,
+              enable: that.mouthInfo.enable ? false : true,
+            };
+
+            this.$confirm(title, "提示", {
+              confirmButtonText: "确定",
+              cancelButtonText: "取消",
+              type: "warning",
+            })
+              .then(() => {
+                boxAttrBan(obj).then((res) => {
+                  let { code } = res;
+                  if (code == 200) {
+                    that.$message({
+                      message: that.mouthInfo.enable ? "停用成功" : "启用成功",
+                      type: "success",
+                    });
+                    that.$set(that.mouthInfo, "enable", !that.mouthInfo.enable);
+                  }
+                });
+              })
+              .catch(() => {
+                this.$message({
+                  type: "info",
+                  message: "已取消操作",
+                });
+              });
+          } else {
+            this.$message({
+              message: "很抱歉，您没有当前格口的操作权限",
+              type: "warning",
+            });
+          }
+        }
+      });
     },
   },
 };
@@ -550,7 +672,7 @@ div {
   }
 
   .box-btn {
-    margin: 25px 0 15px 0;
+    margin: 65px 0 15px 0;
   }
 }
 
@@ -558,5 +680,24 @@ div {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+}
+
+.detail-no-bound {
+  height: 318px;
+  background: #ffffff;
+  border: 2px solid #e5e5e5;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-weight: 500;
+  font-size: 16px;
+  color: #999999;
+  img {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 8px;
+  }
 }
 </style>
