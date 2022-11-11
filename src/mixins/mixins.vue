@@ -8,7 +8,7 @@ export default {
       if (attr.enable) {
         let param = {
           macAddress: attr.macAddress,
-          boxId: attr.id,
+          boxId: attr.boxId,
           boxCode: attr.boxCode,
         };
         this.$message({
@@ -16,13 +16,7 @@ export default {
           type: "info",
         });
         this.pan_flag = true;
-        check_goods(param).then(() => {
-          // 盘点成功
-          // this.$message({
-          //   message: "盘点成功",
-          //   type: "success",
-          // });
-        });
+        check_goods(param).then(() => {});
       } else {
         this.$message({
           message: "当前格口禁用中",
@@ -44,15 +38,10 @@ export default {
         .then(() => {
           let data = {
             macAddress: row.macAddress,
-            boxId: row.id,
+            boxId: row.boxId,
             boxCode: row.boxCode,
           };
-          unLock(data).then(() => {
-            this.$message({
-              type: "success",
-              message: "开锁成功",
-            });
-          });
+          unLock(data).then(() => {});
         })
         .catch(() => {
           this.$message({

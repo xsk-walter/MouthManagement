@@ -62,15 +62,25 @@ export default {
     },
     connectSocket() {
       //测试 and 生产
-      let curIP = window.location.hostname + ":" + window.location.port;
-      let websocketHttp =
-        "https:" == document.location.protocol ? "wss://" : "ws://";
+      // let curIP = window.location.hostname + ":" + window.location.port;
+      let curIP = this.handleUrl(localStorage.getItem("box_host"));
+      let websocketHttp = curIP.includes("https") ? "wss://" : "ws://";
       let wsUrl =
         websocketHttp + curIP + "/ws/cabinetTerminal/backMacKey" + this.random;
+      console.log(wsUrl, "websocket-IP", curIP);
       this.createSocket(wsUrl);
       return false;
     },
 
+    handleUrl(url) {
+      if (!url) return;
+      let str = url.replace("http://", "").replace("https://", "");
+      str =
+        url.replace(/^(.*[n])*.*(.|n)$/g, "$2") === "/"
+          ? str.replace("/", "")
+          : str;
+      return str;
+    },
     createSocket(url) {
       this.Socket && this.Socket.close();
       if (!this.Socket && !this.leave) {
@@ -101,7 +111,6 @@ export default {
       switch (data.operationType) {
         case "remoteUnlock":
           if (data.success) {
-            this.noticeResult = true;
             self.msgSuccess(data.msg);
           } else {
             self.msgError(data.msg);
@@ -110,17 +119,12 @@ export default {
         case "remoteCheck":
           if (data.success) {
             self.msgSuccess(data.msg);
-            if (self.$refs.cpManageGoods.$refs.manageGoodsContent) {
-              self.$refs.cpManageGoods.$refs.manageGoodsContent.queryGoodsList();
-            }
-            this.noticeResult = true;
           } else {
             self.msgError(data.msg);
           }
           break;
         case "remoteLock":
           if (data.success) {
-            this.noticeResult = true;
             self.msgSuccess(data.msg);
           } else {
             self.msgError(data.msg);
@@ -128,7 +132,6 @@ export default {
           break;
         case "remoteLockCheck":
           if (data.success) {
-            this.noticeResult = true;
             self.msgSuccess(data.msg);
           } else {
             self.msgError(data.msg);
@@ -136,7 +139,6 @@ export default {
           break;
         default:
           if (data.success) {
-            this.noticeResult = true;
             self.msgSuccess(data.msg);
           } else {
             self.msgError(data.msg);

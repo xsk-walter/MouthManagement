@@ -68,13 +68,14 @@ export const isAdminUnlockingAllowed = (obj) =>
     method: "get",
     params: obj,
   });
-export const boxAttrBan = (obj) =>
-  request({
+export function boxAttrBan(data) {
+  return request({
     //格口启用 停用
-    url: "/boxInfo/remoteUpdateBoxState",
-    method: "get",
-    params: obj,
+    url: "/boxInfo/updateBoxInfoEableState",
+    method: "post",
+    data,
   });
+}
 export const offBox = (obj) =>
   request({
     // 注销格口

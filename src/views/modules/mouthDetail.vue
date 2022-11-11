@@ -198,6 +198,7 @@ import {
   boxGoodsList,
   isAdminUnlockingAllowed,
   boxAttrBan,
+  check_goods,
 } from "../../common/js/api";
 import mixin from "../../mixins/mixins.vue";
 export default {
@@ -324,9 +325,9 @@ export default {
             // 是否绑定
             that.isBound = res.data.length > 0;
             // 在不在盒
-            that.isOut = that.isBound ? res.data[0].inBoxState === 0 : false;
+            that.isOut = res.data[0].inBoxState === 0 ? true : false;
             // 是否异常 0异常、1正常
-            that.isError = that.isBound ? res.data[0].state === -1 : false;
+            that.isError = res.data[0].state < 0 ? true : false;
             resolve();
           });
         });
@@ -385,6 +386,29 @@ export default {
         });
       }
     },
+    // 盘点
+    handlePan(attr) {
+      if (attr.enable) {
+        let param = {
+          macAddress: attr.macAddress,
+          boxId: attr.id,
+          boxCode: attr.boxCode,
+          hasPositionLock: true,
+          operationType: "remoteCheck",
+        };
+        // this.$message({
+        //   message: "格口盘点中...",
+        //   type: "info",
+        // });
+        this.pan_flag = true;
+        check_goods(param).then(() => {});
+      } else {
+        this.$message({
+          message: "当前格口禁用中",
+          type: "info",
+        });
+      }
+    },
     // 监听分页事件
     handleSizeChange(val) {
       this.pagination.pageSize = val;
@@ -413,7 +437,7 @@ export default {
             let that = this;
             let obj = {
               macAddress: that.macAddress,
-              boxId: that.id,
+              id: that.id,
               enable: that.mouthInfo.enable ? false : true,
             };
 

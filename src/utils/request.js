@@ -61,7 +61,7 @@ instance.interceptors.request.use(
     if (process.env.NODE_ENV === "development") {
       config.headers["Authorization"] =
         "Bearer " +
-        "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJ3ZWIiLCJpc3MiOiJzbWFydC1jYWJpbmV0IiwiZXhwIjoxNjY3MjcxOTY4LCJ1c2VySWQiOiJjMmQwM2Q2NjJmYzY5NDlhYzIyZDA2NTIwOTAxMWI1ZCIsImlhdCI6MTY2NzI2ODM2OCwianRpIjoiZDliZWZkNDdmYzVkNDVjZjljNTQ1OWZkMGE5YzYwMzMifQ.B_gjQ0AzyogRqQa-BBY6Jgf3E07cKJ8SMyCoYt7IgrA"
+        "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJ3ZWIiLCJpc3MiOiJzbWFydC1jYWJpbmV0IiwiZXhwIjoxNjY4MDYzODU5LCJ1c2VySWQiOiJjMmQwM2Q2NjJmYzY5NDlhYzIyZDA2NTIwOTAxMWI1ZCIsImlhdCI6MTY2ODA2MDI1OSwianRpIjoiYjEwZWQ4ZTcyYjczNDRhOWIzNDE1NjNiYzBiNGMyNTIifQ.dDC2Idr-2-3B7p534h3TaUQ-OrHo9YDpog9m4qIVRaM"
       return config;
     }
     if (localStorage.getItem("box_host") && getToken("Admin-Token")) {

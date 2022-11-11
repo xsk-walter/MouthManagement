@@ -61,7 +61,7 @@
             :state="item.state"
             :inBoxState="item.inBoxState"
             :bindState="item.bindState"
-            :cancel="item.cancel"
+            :cancel="item.link"
             :ignoreException="item.ignoreException"
             :boxCode="item.boxCode"
             :productName="item.productName"
@@ -113,6 +113,8 @@ import {
   service_list,
   getCabinetInvokeInfo,
   findLastCheckRecode,
+  check_goods,
+  offBox,
 } from "../common/js/api";
 import mixin from "../mixins/mixins.vue";
 export default {
@@ -182,7 +184,14 @@ export default {
       // console.log(result_list)
       // this.mouthLists = [];
       this.loading = false;
-      this.mouthLists = this.handleData(result_list.data.records);
+      let arr_list = [];
+      arr_list = this.handleData(result_list.data.records);
+      arr_list.map((item, index) => {
+        if (!item.link && !item.bindState) {
+          arr_list.splice(index, 1);
+        }
+      });
+      this.mouthLists = arr_list;
       console.log(this.mouthLists, "this.mouthLists", result_list.data.records);
     },
 
@@ -190,7 +199,35 @@ export default {
       this.getList();
       this.getLastCheckTime();
     },
-
+    // 盘点
+    handlePan(attr) {
+      if (attr.enable) {
+        let param = {
+          macAddress: attr.macAddress,
+          boxId: attr.boxId,
+          boxCode: attr.boxCode,
+          hasPositionLock: true,
+          operationType: "remoteCheck",
+        };
+        // this.$message({
+        //   message: "格口盘点中...",
+        //   type: "info",
+        // });
+        this.pan_flag = true;
+        let that = this;
+        check_goods(param).then(() => {
+          let timer = setTimeout(() => {
+            clearTimeout(timer);
+            that.getList();
+          }, 800);
+        });
+      } else {
+        this.$message({
+          message: "当前格口禁用中",
+          type: "info",
+        });
+      }
+    },
     // 处理列表数组
     handleData(attr) {
       let arr = [];
@@ -199,6 +236,8 @@ export default {
         arr.push({
           ...item.positionList[0],
           ignoreException: item.ignoreException,
+          boxId: item.id,
+          link: item.link,
         });
       });
       return arr;
@@ -239,15 +278,26 @@ export default {
 
     // 注销
     handleCancel(attr) {
-      console.log(attr, "注销");
-      // offBox({ boxId: attr })
-      //   .then(() => {
-      //     this.$message({
-      //       message: "注销成功",
-      //       type: "success",
-      //     });
-      //   })
-      //   .catch(() => {});
+      this.$confirm(`是否确定注销${attr.boxCode}格口吗？`, "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(() => {
+          offBox({ boxId: attr.boxId }).then(() => {
+            this.$message({
+              type: "success",
+              message: "注销成功",
+            });
+            this.getList();
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消操作",
+          });
+        });
     },
 
     // 获取token
@@ -269,7 +319,7 @@ export default {
 }
 .box-card {
   margin: 10px;
-  min-height: 600px;
+  min-height: 800px;
   .header-title {
     position: relative;
     line-height: 25px;

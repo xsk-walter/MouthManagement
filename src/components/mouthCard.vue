@@ -3,7 +3,10 @@
     <!-- pc -->
     <div
       :class="platform === 'pc' ? 'card-pc' : 'card-terminal'"
-      :style="{ border: isCancel ? '1px dashed #c0c4cc' : '' }"
+      :style="{
+        border: isCancel ? '1px dashed #c0c4cc' : '',
+        background: isCancel ? '#F5F5F5' : '#FFFFFF',
+      }"
       @click.stop="goDetail"
     >
       <div class="status-label" v-if="ignoreException">格口异常(已忽略)</div>
@@ -85,7 +88,7 @@
  * platform: pc、terminal
  * 卡片信息 productName 卡片名称、boxCode 格口名称
  * 状态对应关系 statusMaps
- * 1. 注销状态 cancel  - 0 、1
+ * 1. 注销状态 cancel  - true 、false
  * 2. 异常 state - 0 、 -1、 -2
  * 3. 正常 在盒、取出 - inBoxState 0 、1
  * 4. 绑定、 bindState - 0 、1
@@ -112,8 +115,8 @@ export default {
       default: 1,
     },
     cancel: {
-      type: Number,
-      default: 0,
+      type: Boolean,
+      default: false,
     },
     ignoreException: {
       default() {
@@ -132,7 +135,7 @@ export default {
   computed: {
     // 注销
     isCancel() {
-      return this.cancel === 1;
+      return !this.cancel;
     },
     // 异常 - 异常背景
     isError() {
@@ -149,7 +152,8 @@ export default {
     // img是否显示
     showImgIn() {
       return (
-        this.isBound && (this.isInBox || (this.isError && this.state === -1))
+        this.isBound &&
+        ((this.isInBox && !this.isError) || (this.isError && this.state === -1))
       );
     },
     // img - 取出图片展示
@@ -159,7 +163,7 @@ export default {
     // img - 异常取出
     showImgOutError() {
       // return this.isBound && this.isError && this.state === -2;
-      return this.state === -2;
+      return this.isBound && this.isError && this.state === -2;
     },
     // 处理图片展示路径
     handleImgUrl() {
